@@ -1,0 +1,6 @@
+# ignore catch rate text file and the dict build script
+/src/catchratesd
+/src/write_dict.py
+
+# ignore compiled python files
+/src/*.pyc

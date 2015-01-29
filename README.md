@@ -6,7 +6,8 @@ After these steps are implemented a simple GUI will be designed, allowing this p
 
 ####How to use
 At the command line, in the source directory, run CatchProb.py as follows:
-`python CatchProb.py <pokemon> <current HP> <max HP> <ball type> <status effect>`
+
+`python CatchProb.py <pokemon> <current HP> <max HP> <ball> <status>`
 
 - If a Pokemon with a space in its name is used (e.g. Mr. Mime), enclose the name in single or double quotes.
 - If exact HP values are not known, the ideal substitute is to use a number between 1-100 (representing a percentage) and 100 for current and max HP respectively.
