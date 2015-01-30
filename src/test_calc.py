@@ -1,5 +1,6 @@
-from CatchProb import *
-from CatchRates import catch_rate as rate
+from catch_prob import CatchCalc, Gen1Calc, Gen2Calc, Gen3_4Calc
+from catch_rates import catch_rate as rate
+from sys import argv
 
 pkmn, ball = argv[1].lower(), argv[4].lower()
 cur_hp, max_hp = float(argv[2]), float(argv[3])
