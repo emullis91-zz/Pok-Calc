@@ -21,7 +21,7 @@ _STANDARD_BALLS = _BALL_BONUS.keys()
 
 class CatchCalc(object):
     """Base catch rate calculator; calculation methods vary by generation,
-       but are essentially derived from the same variables.
+       but are essentially always derived from the same variables.
     """
     __metaclass__ = ABCMeta
 
@@ -45,6 +45,40 @@ class CatchCalc(object):
             return True
 
 
+class NewGenCalc(CatchCalc):
+    """Base calculator for post-Gen 1 games, all of which share much
+       more similar catch methods with each other than they do with
+       the gen 1 method. 
+    """
+    __metaclass__ = ABCMeta
+    @abstractmethod
+    def __init__(self, p, hp_m, hp_c, b, s="none"):
+        super(NewGenCalc, self).__init__(p, hp_m, hp_c, b, s)
+    
+    def master_catch(self):
+        return super(NewGenCalc, self).master_catch()
+
+    @abstractmethod
+    def catch_chance(self, t0, t1, t2):
+        if self.master_catch(): return
+    
+        if self.status in _TIER_1_STATUSES:
+            status_bonus = t1
+        elif self.status in _TIER_2_STATUSES:
+            status_bonus = t2
+        else:
+            status_bonus = t0
+        
+        if type(self) == Gen2Calc:
+            a = max((3 * self.maxhp - 2 * self.currhp) * 
+                    min(max(self.catchrate * _BALL_BONUS[self.ball], 1), 255) / 
+                    (3*self.maxhp), 1) + status_bonus
+        elif type(self) == Gen3_4Calc:
+            a = ((3 * self.maxhp - 2*self.currhp) * self.catchrate * 
+                  _BALL_BONUS[self.ball] * status_bonus)/(3*self.maxhp)
+
+        self.p_catch = min(max(a/255,0),1)
+        
 class Gen1Calc(CatchCalc):
     """Generation 1 calculator.
     """    
@@ -53,17 +87,19 @@ class Gen1Calc(CatchCalc):
 
     def catch_chance(self):
         if super(Gen1Calc, self).master_catch(): return     
-
+        
         if self.status in _TIER_1_STATUSES:
             statusval = 12
         elif self.status in _TIER_2_STATUSES:
             statusval = 25
         else:
             statusval = 0
+
         if self.ball == "great":
             ballval = 8
         else:
             ballval = 12
+
         ballmod = {"poke": 255, "great": 200, "ultra": 150}
         p_0 = statusval / (ballmod[self.ball]+1)
         hpratio = self.currhp/self.maxhp
@@ -72,26 +108,22 @@ class Gen1Calc(CatchCalc):
         self.p_catch =  min(max(p_0+p_1, 0), 1)
 
 
-class Gen2Calc(CatchCalc):    
+class Gen2Calc(NewGenCalc):    
     """Generation 2 calculator.
     """
     def __init__(self, p, hp_c, hp_m, b, s):
         super(Gen2Calc, self).__init__(p, hp_m, hp_c, b, s)
 
     def catch_chance(self):
-        if super(Gen2Calc, self).master_catch(): return     
+        if super(Gen2Calc, self).master_catch(): return
 
-        if self.status in _TIER_2_STATUSES:
-            status_bonus = 10
-        else:                  # a glitch in the gen 2 games causes  
-            status_bonus = 0   # poison, burn, and paralyze to give no bonus.      
-
-        mod_rate = min(max(self.catchrate * _BALL_BONUS[self.ball], 1), 255)
-        a = max((3*self.maxhp - 2*self.currhp) * mod_rate / (3*self.maxhp), 1) + status_bonus
-        self.p_catch = a/255
+        # burns, poisoning and paralysis grant no catch chance bonus
+        # in generation 2 due to a glitch; hence, status_bonuses[1] eaualing 0
+        status_bonuses = (0, 0, 10)            
+        super(Gen2Calc, self).catch_chance(*status_bonuses)
 
    
-class Gen3_4Calc(CatchCalc):    
+class Gen3_4Calc(NewGenCalc):    
     """Generation 3 & 4 calculator. 
        Both gens' catch methods are identical.
     """
@@ -99,16 +131,6 @@ class Gen3_4Calc(CatchCalc):
         super(Gen3_4Calc, self).__init__(p, hp_m, hp_c, b, s)
 
     def catch_chance(self):
-        if super(Gen3_4Calc, self).master_catch(): return     
-
-        if self.status in _TIER_2_STATUSES:
-            status_bonus = 2
-        elif self.status in _TIER_1_STATUSES:
-            status_bonus = 1.5
-        else:
-            status_bonus = 1    
-        a = ((3 * self.maxhp - 2*self.currhp) * self.catchrate * _BALL_BONUS[self.ball] * 
-              status_bonus)/(3*self.maxhp)     
-        self.p_catch = min(max(a/255,0), 1)
-
-
+        if super(Gen3_4Calc, self).master_catch(): return
+        status_bonuses = (1, 1.5, 2)   
+        super(Gen3_4Calc, self).catch_chance(*status_bonuses)
